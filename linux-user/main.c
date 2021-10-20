@@ -48,6 +48,29 @@
 #define SymExpr void*
 #include "RuntimeCommon.h"
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+
+#define MAX_PATH 256
+#define _DEBUG_
+
+#ifdef _DEBUG_
+#define     KdPrint(...)        printf(__VA_ARGS__)
+#define     KdFPrint(x, ...)    fprintf(x, __VA_ARGS__)
+#define     KdFFlush(x)         fflush(x)
+#else
+#define     KdPrint(...)
+#define     KdFPrint(x, ...)
+#define     KdFFlush(x)
+#endif
+
+int LoadFlipMapShareMemory(char* pszRootDir);
+
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 char *exec_path;
 
 int singlestep;
@@ -594,6 +617,62 @@ static int parse_args(int argc, char **argv)
     return optind;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+
+/*
+FunctionName:
+	LoadFlipMapShareMemory
+
+Argument:
+	None
+
+Result:
+	None
+
+Comment:
+
+*/
+int LoadFlipMapShareMemory(char* pszRootDir)
+{
+	FILE*			fp;
+	uint32_t		shm_id;
+	unsigned char	*map;
+    char*           pszFilePath;
+
+    pszFilePath = malloc(MAX_PATH);
+    memset(pszFilePath, 0 , MAX_PATH);
+
+	KdPrint("[LoadFlipMapShareMemory] Start\n");
+    sprintf(pszFilePath, "%s/FLIP_SHM_ID", pszRootDir);
+	fp = fopen(pszFilePath, "rb");
+    if(NULL != fp){
+      fread(&shm_id,1,sizeof(uint32_t),fp);
+      fclose(fp);
+    }else{
+      KdPrint("Can not set ENV File");
+	  exit(-1);
+    }
+
+	map = (unsigned char *)shmat(shm_id, NULL, 0);
+	/* Whooooops. */
+
+	if ( !map || map == (void *)-1 ) {
+		perror("[LoadFlipMapShareMemory] ERROR: could not access fuzzing shared memory");
+		exit(1);
+	}else{
+
+	}
+
+	KdPrint("[LoadFlipMapShareMemory] End\n");
+
+	return 0;
+}
+
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 int main(int argc, char **argv, char **envp)
 {
     struct target_pt_regs regs1, *regs = &regs1;
@@ -609,6 +688,90 @@ int main(int argc, char **argv, char **envp)
     int i;
     int ret;
     int execfd;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+    char    *pszOutputDir   = (char*)malloc(MAX_PATH);
+    char    *pszInputDir    = (char*)malloc(MAX_PATH);
+    char    *pszRootDir     = (char*)malloc(MAX_PATH);
+    char    *pszCommandLine = (char*)malloc(MAX_PATH);
+    int		c               = 0;
+    int     d               = 0;
+
+    memset(pszOutputDir, 0, MAX_PATH);
+    memset(pszInputDir, 0, MAX_PATH);
+    memset(pszRootDir, 0, MAX_PATH);
+    memset(pszCommandLine, 0, MAX_PATH);
+
+    while(EOF != (c = getopt(argc,argv,"i:o:r:?-:")))
+	{
+		KdPrint("start to process %d para\n",optind);
+		switch(c)
+		{
+			case 'i':
+				KdFPrint(stderr, "we get input control dependency node file path:%s\n",optarg);
+				if( MAX_PATH <= strlen(optarg) )
+				{
+					KdPrint("Input File Path Error\n");
+					return -1;
+				}
+				strncpy(pszInputDir, optarg, MAX_PATH-1 );
+				break;
+
+			case 'o':
+				KdFPrint(stderr, "we get output file path:%s\n",optarg);
+				if( MAX_PATH <= strlen(optarg) )
+				{
+					KdPrint("Input File Path Error\n");
+					return -1;
+				}
+				strncpy(pszOutputDir, optarg, MAX_PATH-1 );
+				break;
+
+			case 'r':
+				KdFPrint(stderr, "we get output file path:%s\n",optarg);
+				if( MAX_PATH <= strlen(optarg) )
+				{
+					KdPrint("Input File Path Error\n");
+					return -1;
+				}
+				strncpy(pszRootDir, optarg, MAX_PATH-1 );
+				break;
+
+            case '-':
+                while(EOF != (d = getopt(argc,argv,""))){
+                    strncat(pszCommandLine, optarg, MAX_PATH);
+                    KdPrint("%s\n",pszCommandLine);
+                }
+
+                break;
+                
+			case '?':
+				KdFPrint(stderr, "unknow option:%c\n",optopt);
+				
+				exit(0);
+				break;
+
+			default:
+				
+				break;
+		}    
+	}
+
+    if ( NULL != pszInputDir ){
+        setenv("SYMCC_OUTPUT_DIR", pszInputDir, 1);
+    }
+
+    if ( NULL != pszOutputDir){
+        setenv("SYMCC_INPUT_FILE", pszOutputDir, 1);
+    }
+
+    if( 0!=LoadFlipMapShareMemory(pszRootDir) ){
+        KdPrint("error\n");
+    }
+
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
     error_init(argv[0]);
     module_call_init(MODULE_INIT_TRACE);
