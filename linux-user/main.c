@@ -66,6 +66,76 @@
 
 int LoadFlipMapShareMemory(char* pszRootDir);
 
+/*
+FunctionName:
+	LoadFlipMapShareMemory
+
+Argument:
+	None
+
+Result:
+	None
+
+Comment:
+
+*/
+int LoadConfigFile(char* pszFilePath)
+{
+    
+
+
+    return 0;
+}
+
+/*
+FunctionName:
+	LoadFlipMapShareMemory
+
+Argument:
+	None
+
+Result:
+	None
+
+Comment:
+
+*/
+int LoadFlipMapShareMemory(char* pszRootDir)
+{
+	FILE*			fp;
+	uint32_t		shm_id;
+	unsigned char	*map;
+    char*           pszFilePath;
+
+    pszFilePath = malloc(MAX_PATH);
+    memset(pszFilePath, 0 , MAX_PATH);
+
+	KdPrint("[LoadFlipMapShareMemory] Start\n");
+    sprintf(pszFilePath, "%s/FLIP_SHM_ID", pszRootDir);
+	fp = fopen(pszFilePath, "rb");
+    if(NULL != fp){
+      fread(&shm_id,1,sizeof(uint32_t),fp);
+      fclose(fp);
+    }else{
+      KdPrint("Can not set ENV File");
+	  exit(-1);
+    }
+
+	map = (unsigned char *)shmat(shm_id, NULL, 0);
+	/* Whooooops. */
+
+	if ( !map || map == (void *)-1 ) {
+		perror("[LoadFlipMapShareMemory] ERROR: could not access fuzzing shared memory");
+		exit(1);
+	}else{
+
+	}
+
+	KdPrint("[LoadFlipMapShareMemory] End\n");
+
+	return 0;
+}
+
 // FirefoxXP Add End
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -546,6 +616,7 @@ static void usage(int exitcode)
     exit(exitcode);
 }
 
+
 static int parse_args(int argc, char **argv)
 {
     const char *r;
@@ -562,6 +633,94 @@ static int parse_args(int argc, char **argv)
             arginfo->handle_opt(r);
         }
     }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+    char    *pszOutputDir   = (char*)malloc(MAX_PATH);
+    char    *pszInputDir    = (char*)malloc(MAX_PATH);
+    char    *pszRootDir     = (char*)malloc(MAX_PATH);
+    char    *pszCommandLine = (char*)malloc(MAX_PATH);
+    int		c               = 0;
+    int     d               = 0;
+
+    memset(pszOutputDir, 0, MAX_PATH);
+    memset(pszInputDir, 0, MAX_PATH);
+    memset(pszRootDir, 0, MAX_PATH);
+    memset(pszCommandLine, 0, MAX_PATH);
+    /*
+    while(EOF != (c = getopt(argc,argv,"i:o:r:?-:")))
+	{
+		KdPrint("start to process %d para\n",optind);
+		switch(c)
+		{
+			case 'i':
+				KdFPrint(stderr, "we get input control dependency node file path:%s\n",optarg);
+				if( MAX_PATH <= strlen(optarg) )
+				{
+					KdPrint("Input File Path Error\n");
+					return -1;
+				}
+				strncpy(pszInputDir, optarg, MAX_PATH-1 );
+				break;
+
+			case 'o':
+				KdFPrint(stderr, "we get output file path:%s\n",optarg);
+				if( MAX_PATH <= strlen(optarg) )
+				{
+					KdPrint("Input File Path Error\n");
+					return -1;
+				}
+				strncpy(pszOutputDir, optarg, MAX_PATH-1 );
+				break;
+
+			case 'r':
+				KdFPrint(stderr, "we get output file path:%s\n",optarg);
+				if( MAX_PATH <= strlen(optarg) )
+				{
+					KdPrint("Input File Path Error\n");
+					return -1;
+				}
+				strncpy(pszRootDir, optarg, MAX_PATH-1 );
+				break;
+
+            case '-':
+                while(EOF != (d = getopt(argc,argv,""))){
+                    strncat(pszCommandLine, optarg, MAX_PATH);
+                    KdPrint("%s\n",pszCommandLine);
+                }
+
+                goto Label_end;
+
+			case '?':
+				KdFPrint(stderr, "unknow option:%c\n",optopt);
+				
+				exit(0);
+				break;
+
+			default:
+				
+				break;
+		}    
+	}
+    
+Label_end:
+
+    if ( NULL != pszInputDir ){
+        setenv("SYMCC_OUTPUT_DIR", pszInputDir, 1);
+    }
+
+    if ( NULL != pszOutputDir){
+        setenv("SYMCC_INPUT_FILE", pszOutputDir, 1);
+    }
+
+    if( 0!=LoadFlipMapShareMemory(pszRootDir) ){
+        KdPrint("error\n");
+    }
+*/
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
     optind = 1;
     for (;;) {
@@ -617,60 +776,6 @@ static int parse_args(int argc, char **argv)
     return optind;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-// FirefoxXP Add Start
-
-/*
-FunctionName:
-	LoadFlipMapShareMemory
-
-Argument:
-	None
-
-Result:
-	None
-
-Comment:
-
-*/
-int LoadFlipMapShareMemory(char* pszRootDir)
-{
-	FILE*			fp;
-	uint32_t		shm_id;
-	unsigned char	*map;
-    char*           pszFilePath;
-
-    pszFilePath = malloc(MAX_PATH);
-    memset(pszFilePath, 0 , MAX_PATH);
-
-	KdPrint("[LoadFlipMapShareMemory] Start\n");
-    sprintf(pszFilePath, "%s/FLIP_SHM_ID", pszRootDir);
-	fp = fopen(pszFilePath, "rb");
-    if(NULL != fp){
-      fread(&shm_id,1,sizeof(uint32_t),fp);
-      fclose(fp);
-    }else{
-      KdPrint("Can not set ENV File");
-	  exit(-1);
-    }
-
-	map = (unsigned char *)shmat(shm_id, NULL, 0);
-	/* Whooooops. */
-
-	if ( !map || map == (void *)-1 ) {
-		perror("[LoadFlipMapShareMemory] ERROR: could not access fuzzing shared memory");
-		exit(1);
-	}else{
-
-	}
-
-	KdPrint("[LoadFlipMapShareMemory] End\n");
-
-	return 0;
-}
-
-// FirefoxXP Add End
-//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int main(int argc, char **argv, char **envp)
@@ -702,7 +807,7 @@ int main(int argc, char **argv, char **envp)
     memset(pszInputDir, 0, MAX_PATH);
     memset(pszRootDir, 0, MAX_PATH);
     memset(pszCommandLine, 0, MAX_PATH);
-
+    /*
     while(EOF != (c = getopt(argc,argv,"i:o:r:?-:")))
 	{
 		KdPrint("start to process %d para\n",optind);
@@ -744,8 +849,8 @@ int main(int argc, char **argv, char **envp)
                     KdPrint("%s\n",pszCommandLine);
                 }
 
-                break;
-                
+                goto Label_end;
+
 			case '?':
 				KdFPrint(stderr, "unknow option:%c\n",optopt);
 				
@@ -757,6 +862,8 @@ int main(int argc, char **argv, char **envp)
 				break;
 		}    
 	}
+    
+Label_end:
 
     if ( NULL != pszInputDir ){
         setenv("SYMCC_OUTPUT_DIR", pszInputDir, 1);
@@ -769,7 +876,7 @@ int main(int argc, char **argv, char **envp)
     if( 0!=LoadFlipMapShareMemory(pszRootDir) ){
         KdPrint("error\n");
     }
-
+*/
 // FirefoxXP Add End
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
