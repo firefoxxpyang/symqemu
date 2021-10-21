@@ -64,8 +64,13 @@
 #define     KdFFlush(x)
 #endif
 
-int LoadFlipMapShareMemory(char* pszRootDir);
 
+char    *g_pszProgramName;
+char    *g_pszInputDir;
+char    *g_pszSyncDir;
+
+int LoadFlipMapShareMemory(char* pszRootDir);
+int LoadConfigFile(char* pszFilePath);
 /*
 FunctionName:
 	LoadFlipMapShareMemory
@@ -112,6 +117,11 @@ int LoadFlipMapShareMemory(char* pszRootDir)
 
 	KdPrint("[LoadFlipMapShareMemory] Start\n");
     sprintf(pszFilePath, "%s/FLIP_SHM_ID", pszRootDir);
+
+    if( 0 != access(pszFilePath, F_OK)){
+        return -1;
+    }
+
 	fp = fopen(pszFilePath, "rb");
     if(NULL != fp){
       fread(&shm_id,1,sizeof(uint32_t),fp);
@@ -425,6 +435,9 @@ static void handle_arg_cpu(const char *arg)
     }
 }
 
+
+
+
 static void handle_arg_guest_base(const char *arg)
 {
     guest_base = strtol(arg, NULL, 0);
@@ -473,6 +486,26 @@ static void handle_arg_strace(const char *arg)
 {
     do_strace = 1;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+
+static void handle_arg_program_name(const char *arg)
+{
+    strncpy(g_pszProgramName, strdup(arg), MAX_PATH - 1 );
+    KdPrint("input Directory:%s\n",g_pszProgramName);
+}
+
+static void handle_arg_sync_directory(const char *arg)
+{
+    strncpy(g_pszSyncDir, strdup(arg), MAX_PATH - 1 );
+    KdPrint("input Directory:%s\n",g_pszSyncDir);
+}
+
+
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static void handle_arg_version(const char *arg)
 {
@@ -541,6 +574,18 @@ static const struct qemu_argument arg_table[] = {
      "",           "[[enable=]<pattern>][,events=<file>][,file=<file>]"},
     {"version",    "QEMU_VERSION",     false, handle_arg_version,
      "",           "display version information and exit"},
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+    
+    {"program",    "PROGRAM_NAME",     true, handle_arg_program_name,
+     "",           "display version information and exit"},
+    {"sync",       "SYNC_DIRECTORY",   true, handle_arg_sync_directory,
+     "",           "display version information and exit"},
+    
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
     {NULL, NULL, false, NULL, NULL, NULL}
 };
 
@@ -623,6 +668,20 @@ static int parse_args(int argc, char **argv)
     int optind;
     const struct qemu_argument *arginfo;
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+
+    g_pszProgramName    = (char*)malloc(MAX_PATH);
+    g_pszInputDir       = (char*)malloc(MAX_PATH);
+    g_pszSyncDir        = (char*)malloc(MAX_PATH);
+
+    memset(g_pszProgramName, 0, MAX_PATH);
+    memset(g_pszInputDir, 0, MAX_PATH);
+    memset(g_pszSyncDir, 0, MAX_PATH);
+
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
     for (arginfo = arg_table; arginfo->handle_opt != NULL; arginfo++) {
         if (arginfo->env == NULL) {
             continue;
@@ -633,94 +692,6 @@ static int parse_args(int argc, char **argv)
             arginfo->handle_opt(r);
         }
     }
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-// FirefoxXP Add Start
-    char    *pszOutputDir   = (char*)malloc(MAX_PATH);
-    char    *pszInputDir    = (char*)malloc(MAX_PATH);
-    char    *pszRootDir     = (char*)malloc(MAX_PATH);
-    char    *pszCommandLine = (char*)malloc(MAX_PATH);
-    int		c               = 0;
-    int     d               = 0;
-
-    memset(pszOutputDir, 0, MAX_PATH);
-    memset(pszInputDir, 0, MAX_PATH);
-    memset(pszRootDir, 0, MAX_PATH);
-    memset(pszCommandLine, 0, MAX_PATH);
-    /*
-    while(EOF != (c = getopt(argc,argv,"i:o:r:?-:")))
-	{
-		KdPrint("start to process %d para\n",optind);
-		switch(c)
-		{
-			case 'i':
-				KdFPrint(stderr, "we get input control dependency node file path:%s\n",optarg);
-				if( MAX_PATH <= strlen(optarg) )
-				{
-					KdPrint("Input File Path Error\n");
-					return -1;
-				}
-				strncpy(pszInputDir, optarg, MAX_PATH-1 );
-				break;
-
-			case 'o':
-				KdFPrint(stderr, "we get output file path:%s\n",optarg);
-				if( MAX_PATH <= strlen(optarg) )
-				{
-					KdPrint("Input File Path Error\n");
-					return -1;
-				}
-				strncpy(pszOutputDir, optarg, MAX_PATH-1 );
-				break;
-
-			case 'r':
-				KdFPrint(stderr, "we get output file path:%s\n",optarg);
-				if( MAX_PATH <= strlen(optarg) )
-				{
-					KdPrint("Input File Path Error\n");
-					return -1;
-				}
-				strncpy(pszRootDir, optarg, MAX_PATH-1 );
-				break;
-
-            case '-':
-                while(EOF != (d = getopt(argc,argv,""))){
-                    strncat(pszCommandLine, optarg, MAX_PATH);
-                    KdPrint("%s\n",pszCommandLine);
-                }
-
-                goto Label_end;
-
-			case '?':
-				KdFPrint(stderr, "unknow option:%c\n",optopt);
-				
-				exit(0);
-				break;
-
-			default:
-				
-				break;
-		}    
-	}
-    
-Label_end:
-
-    if ( NULL != pszInputDir ){
-        setenv("SYMCC_OUTPUT_DIR", pszInputDir, 1);
-    }
-
-    if ( NULL != pszOutputDir){
-        setenv("SYMCC_INPUT_FILE", pszOutputDir, 1);
-    }
-
-    if( 0!=LoadFlipMapShareMemory(pszRootDir) ){
-        KdPrint("error\n");
-    }
-*/
-// FirefoxXP Add End
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
     optind = 1;
     for (;;) {
@@ -793,92 +764,6 @@ int main(int argc, char **argv, char **envp)
     int i;
     int ret;
     int execfd;
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-// FirefoxXP Add Start
-    char    *pszOutputDir   = (char*)malloc(MAX_PATH);
-    char    *pszInputDir    = (char*)malloc(MAX_PATH);
-    char    *pszRootDir     = (char*)malloc(MAX_PATH);
-    char    *pszCommandLine = (char*)malloc(MAX_PATH);
-    int		c               = 0;
-    int     d               = 0;
-
-    memset(pszOutputDir, 0, MAX_PATH);
-    memset(pszInputDir, 0, MAX_PATH);
-    memset(pszRootDir, 0, MAX_PATH);
-    memset(pszCommandLine, 0, MAX_PATH);
-    /*
-    while(EOF != (c = getopt(argc,argv,"i:o:r:?-:")))
-	{
-		KdPrint("start to process %d para\n",optind);
-		switch(c)
-		{
-			case 'i':
-				KdFPrint(stderr, "we get input control dependency node file path:%s\n",optarg);
-				if( MAX_PATH <= strlen(optarg) )
-				{
-					KdPrint("Input File Path Error\n");
-					return -1;
-				}
-				strncpy(pszInputDir, optarg, MAX_PATH-1 );
-				break;
-
-			case 'o':
-				KdFPrint(stderr, "we get output file path:%s\n",optarg);
-				if( MAX_PATH <= strlen(optarg) )
-				{
-					KdPrint("Input File Path Error\n");
-					return -1;
-				}
-				strncpy(pszOutputDir, optarg, MAX_PATH-1 );
-				break;
-
-			case 'r':
-				KdFPrint(stderr, "we get output file path:%s\n",optarg);
-				if( MAX_PATH <= strlen(optarg) )
-				{
-					KdPrint("Input File Path Error\n");
-					return -1;
-				}
-				strncpy(pszRootDir, optarg, MAX_PATH-1 );
-				break;
-
-            case '-':
-                while(EOF != (d = getopt(argc,argv,""))){
-                    strncat(pszCommandLine, optarg, MAX_PATH);
-                    KdPrint("%s\n",pszCommandLine);
-                }
-
-                goto Label_end;
-
-			case '?':
-				KdFPrint(stderr, "unknow option:%c\n",optopt);
-				
-				exit(0);
-				break;
-
-			default:
-				
-				break;
-		}    
-	}
-    
-Label_end:
-
-    if ( NULL != pszInputDir ){
-        setenv("SYMCC_OUTPUT_DIR", pszInputDir, 1);
-    }
-
-    if ( NULL != pszOutputDir){
-        setenv("SYMCC_INPUT_FILE", pszOutputDir, 1);
-    }
-
-    if( 0!=LoadFlipMapShareMemory(pszRootDir) ){
-        KdPrint("error\n");
-    }
-*/
-// FirefoxXP Add End
-//////////////////////////////////////////////////////////////////////////////////////////////////////
 
     error_init(argv[0]);
     module_call_init(MODULE_INIT_TRACE);
