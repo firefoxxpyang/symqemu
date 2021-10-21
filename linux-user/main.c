@@ -67,6 +67,7 @@
 
 char    *g_pszProgramName;
 char    *g_pszInputDir;
+//char    *g_pszOutputDir;
 char    *g_pszSyncDir;
 
 int LoadFlipMapShareMemory(char* pszRootDir);
@@ -105,21 +106,24 @@ Result:
 Comment:
 
 */
-int LoadFlipMapShareMemory(char* pszRootDir)
+int LoadFlipMapShareMemory(char* pszSyncDir)
 {
 	FILE*			fp;
 	uint32_t		shm_id;
 	unsigned char	*map;
     char*           pszFilePath;
+    
+    return 0;
 
     pszFilePath = malloc(MAX_PATH);
     memset(pszFilePath, 0 , MAX_PATH);
 
 	KdPrint("[LoadFlipMapShareMemory] Start\n");
-    sprintf(pszFilePath, "%s/FLIP_SHM_ID", pszRootDir);
+    sprintf(pszFilePath, "%s/FLIP_SHM_ID", pszSyncDir);
 
     if( 0 != access(pszFilePath, F_OK)){
-        return -1;
+        KdPrint("File not exist, will exit.\n");
+        exit(-1);
     }
 
 	fp = fopen(pszFilePath, "rb");
@@ -491,18 +495,43 @@ static void handle_arg_strace(const char *arg)
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // FirefoxXP Add Start
 
+/*
+FucntionName:
+Argument:
+Result:
+Comment:
+*/
 static void handle_arg_program_name(const char *arg)
 {
     strncpy(g_pszProgramName, strdup(arg), MAX_PATH - 1 );
     KdPrint("input Directory:%s\n",g_pszProgramName);
 }
 
+
+/*
+FucntionName:
+Argument:
+Result:
+Comment:
+*/
 static void handle_arg_sync_directory(const char *arg)
 {
+    int     iResult;
+    char*   pszOutputDir;
+
+    pszOutputDir = (char*)malloc(MAX_PATH);
+    memset(pszOutputDir, 0, MAX_PATH);
+
     strncpy(g_pszSyncDir, strdup(arg), MAX_PATH - 1 );
     KdPrint("input Directory:%s\n",g_pszSyncDir);
+    iResult = LoadFlipMapShareMemory(g_pszSyncDir);
+    if( 0 != iResult ){
+        exit(-1);
+    }
+    sprintf(pszOutputDir, "%s/FLIP/queue/", g_pszSyncDir);
+    KdPrint(pszOutputDir);
+    setenv("SYMCC_OUTPUT_DIR", pszOutputDir, 1);
 }
-
 
 // FirefoxXP Add End
 //////////////////////////////////////////////////////////////////////////////////////////////////////
