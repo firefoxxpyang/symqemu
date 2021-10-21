@@ -112,11 +112,20 @@ int LoadFlipMapShareMemory(char* pszSyncDir)
 	uint32_t		shm_id;
 	unsigned char	*map;
     char*           pszFilePath;
+    char*           pszMapAddress;
     
+    pszMapAddress = "123456";
+    KdPrint("[LoadFlipMapShareMemory] pszMapAddress:%s\n",pszMapAddress);
+    setenv("SYMCC_FLIP_MAP_ADDRESS",pszMapAddress, 1);
+
     return 0;
+
 
     pszFilePath = malloc(MAX_PATH);
     memset(pszFilePath, 0 , MAX_PATH);
+
+    pszMapAddress = malloc(MAX_PATH);
+    memset(pszMapAddress, 0 , MAX_PATH);
 
 	KdPrint("[LoadFlipMapShareMemory] Start\n");
     sprintf(pszFilePath, "%s/FLIP_SHM_ID", pszSyncDir);
@@ -144,6 +153,10 @@ int LoadFlipMapShareMemory(char* pszSyncDir)
 	}else{
 
 	}
+
+    sprintf(pszMapAddress, "%d", (uint64_t)map );
+    KdPrint("pszMapAddress:%s\n",pszMapAddress);
+    setenv("SYMCC_FLIP_MAP_ADDRESS", pszMapAddress, 1);
 
 	KdPrint("[LoadFlipMapShareMemory] End\n");
 
@@ -497,22 +510,37 @@ static void handle_arg_strace(const char *arg)
 
 /*
 FucntionName:
+    handle_arg_program_name
+
 Argument:
+    const char *arg
+
 Result:
+    None
+
 Comment:
+
 */
 static void handle_arg_program_name(const char *arg)
 {
     strncpy(g_pszProgramName, strdup(arg), MAX_PATH - 1 );
     KdPrint("input Directory:%s\n",g_pszProgramName);
+
 }
 
 
 /*
 FucntionName:
+    handle_arg_sync_directory
+
 Argument:
+    const char *arg
+
 Result:
+    None
+
 Comment:
+
 */
 static void handle_arg_sync_directory(const char *arg)
 {
@@ -775,8 +803,6 @@ static int parse_args(int argc, char **argv)
 
     return optind;
 }
-
-
 
 int main(int argc, char **argv, char **envp)
 {
