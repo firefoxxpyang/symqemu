@@ -106,7 +106,7 @@ Result:
 Comment:
 
 */
-int LoadFlipMapShareMemory(char* pszSyncDir)
+int LoadFlipMapShareMemoryAddress(char* pszSyncDir)
 {
 	FILE*			fp;
 	uint32_t		shm_id;
@@ -114,12 +114,7 @@ int LoadFlipMapShareMemory(char* pszSyncDir)
     char*           pszFilePath;
     char*           pszMapAddress;
     
-    pszMapAddress = "123456";
-    KdPrint("[LoadFlipMapShareMemory] pszMapAddress:%s\n",pszMapAddress);
-    setenv("SYMCC_FLIP_MAP_ADDRESS",pszMapAddress, 1);
-
-    return 0;
-
+    KdPrint("[LoadFlipMapShareMemoryAddress] Start\n");
 
     pszFilePath = malloc(MAX_PATH);
     memset(pszFilePath, 0 , MAX_PATH);
@@ -552,10 +547,12 @@ static void handle_arg_sync_directory(const char *arg)
 
     strncpy(g_pszSyncDir, strdup(arg), MAX_PATH - 1 );
     KdPrint("input Directory:%s\n",g_pszSyncDir);
-    iResult = LoadFlipMapShareMemory(g_pszSyncDir);
+
+    iResult = LoadFlipMapShareMemoryAddress(g_pszSyncDir);
     if( 0 != iResult ){
         exit(-1);
     }
+
     sprintf(pszOutputDir, "%s/FLIP/queue/", g_pszSyncDir);
     KdPrint(pszOutputDir);
     setenv("SYMCC_OUTPUT_DIR", pszOutputDir, 1);
