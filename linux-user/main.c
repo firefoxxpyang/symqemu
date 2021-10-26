@@ -51,6 +51,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // FirefoxXP Add Start
 
+#include <sys/shm.h>
+
 #define MAX_PATH 256
 #define _DEBUG_
 
@@ -64,13 +66,21 @@
 #define     KdFFlush(x)
 #endif
 
+#define HASH_TABLE_SIZE                 65536
+#define HASH_TABLE_MAX_COLLISION_COUNT	4
+#define ADDRESS_MASK                    0xFFFFF
+
+typedef struct _EDGE_BLACK_LIST_FLIP_RECORD_{
+	uint64_t    ulControlDepedenceNodeJccAddress;
+	int64_t    	lTakenOrNotTaken;
+}EDGE_BLACK_LIST_FLIP_RECORD,*P_EDGE_BLACK_LIST_FLIP_RECORD,**PP_EDGE_BLACK_LIST_FLIP_RECORD;
 
 char    *g_pszProgramName;
 char    *g_pszInputDir;
 //char    *g_pszOutputDir;
 char    *g_pszSyncDir;
 
-int LoadFlipMapShareMemory(char* pszRootDir);
+int LoadFlipMapShareMemoryAddress(char* pszRootDir);
 int LoadConfigFile(char* pszFilePath);
 /*
 FunctionName:
@@ -108,12 +118,13 @@ Comment:
 */
 int LoadFlipMapShareMemoryAddress(char* pszSyncDir)
 {
-	FILE*			fp;
-	uint32_t		shm_id;
-	unsigned char	*map;
-    char*           pszFilePath;
-    char*           pszMapAddress;
-    
+	FILE*			                fp;
+	int32_t		                    shm_id;
+    char*                           pszFilePath;
+    char*                           pszMapAddress;
+    P_EDGE_BLACK_LIST_FLIP_RECORD   pstPointer;
+    uint64_t                        i;
+
     KdPrint("[LoadFlipMapShareMemoryAddress] Start\n");
 
     pszFilePath = malloc(MAX_PATH);
@@ -132,26 +143,58 @@ int LoadFlipMapShareMemoryAddress(char* pszSyncDir)
 
 	fp = fopen(pszFilePath, "rb");
     if(NULL != fp){
-      fread(&shm_id,1,sizeof(uint32_t),fp);
+      fread(&shm_id,1,sizeof(int32_t),fp);
       fclose(fp);
     }else{
       KdPrint("Can not set ENV File");
 	  exit(-1);
     }
 
-	map = (unsigned char *)shmat(shm_id, NULL, 0);
+    KdPrint("[LoadFlipMapShareMemoryAddress] shmid:%d\n",shm_id);
+
+	pstPointer = (P_EDGE_BLACK_LIST_FLIP_RECORD)shmat(shm_id, NULL, 0);
 	/* Whooooops. */
 
-	if ( !map || map == (void *)-1 ) {
+	if ( !pstPointer || pstPointer == (void *)-1 ) {
 		perror("[LoadFlipMapShareMemory] ERROR: could not access fuzzing shared memory");
 		exit(1);
 	}else{
 
 	}
 
-    sprintf(pszMapAddress, "%d", (uint64_t)map );
-    KdPrint("pszMapAddress:%s\n",pszMapAddress);
+    sprintf(pszMapAddress, "%lx", (uint64_t)pstPointer );
+
+    
+    KdPrint("[LoadFlipMapShareMemoryAddress] pszMapAddress:0x%s\n",pszMapAddress);
     setenv("SYMCC_FLIP_MAP_ADDRESS", pszMapAddress, 1);
+
+        //FILE*         fp;
+        //char          buffer[128];
+        //ulIndex     = (ulEIP & 0xFFFFF) % ( HASH_TABLE_SIZE/4 );
+        //pstPointer  = (P_EDGE_BLACK_LIST_FLIP_RECORD)pstEdgeBlackListFlipArray + ulIndex;
+        
+        //fprintf(stderr,"Address is:0x%lx\n",ulIndex);
+        /*
+        i = 0;
+        while( ( i < HASH_TABLE_MAX_COLLISION_COUNT ) && ( (pstPointer+i)->ulControlDepedenceNodeJccAddress > 0 ) ){
+            if( (pstPointer+i)->ulControlDepedenceNodeJccAddress == ulEIP ){
+            if( ( ( 1 ==  (pstPointer+i)->ulControlDepedenceNodeJccAddress ) && taken) 
+                || ( ( 0 ==  (pstPointer+i)->ulControlDepedenceNodeJccAddress ) && !taken) )
+            {
+                bInteresting = true;
+                break;
+            }
+            }
+            i++;
+        }
+        */
+    i = 0;
+    while( i < HASH_TABLE_MAX_COLLISION_COUNT){
+        KdPrint("[LoadFlipMapShareMemoryAddress] Jcc:%lx\n", (pstPointer + i)->ulControlDepedenceNodeJccAddress);
+        KdPrint("[LoadFlipMapShareMemoryAddress] Taken:%ld\n", (pstPointer + i)->lTakenOrNotTaken);
+        i++;
+    }
+
 
 	KdPrint("[LoadFlipMapShareMemory] End\n");
 
@@ -554,7 +597,7 @@ static void handle_arg_sync_directory(const char *arg)
     }
 
     sprintf(pszOutputDir, "%s/FLIP/queue/", g_pszSyncDir);
-    KdPrint(pszOutputDir);
+    KdPrint("%s\n",pszOutputDir);
     setenv("SYMCC_OUTPUT_DIR", pszOutputDir, 1);
 }
 
