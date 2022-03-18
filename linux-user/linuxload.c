@@ -138,7 +138,11 @@ int loader_exec(int fdexec, const char *filename, char **argv, char **envp,
     bprm->envp = envp;
 
     retval = prepare_binprm(bprm);
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+    fprintf(stderr,"Will Load:%s\n",filename);
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////      
     if(retval>=0) {
         if (bprm->buf[0] == 0x7f
                 && bprm->buf[1] == 'E'

@@ -2348,6 +2348,7 @@ static void load_elf_image(const char *image_name, int image_fd,
         load_addr = target_mmap(loaddr, hiaddr - loaddr, PROT_NONE,
                                 MAP_PRIVATE | MAP_ANON | MAP_NORESERVE,
                                 -1, 0);
+    
         if (load_addr == -1) {
             goto exit_perror;
         }
@@ -2377,6 +2378,14 @@ static void load_elf_image(const char *image_name, int image_fd,
             }
         }
     }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+    fprintf(stderr,"[load_elf_image] We get base address here:0x%lu\n",load_addr);
+    fprintf(stderr,"[load_elf_image] We get end address here:0x%lu\n",hiaddr);
+    fprintf(stderr,"[load_elf_image] We get image name here:%s\n",image_name);
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////    
 
     info->load_bias = load_bias;
     info->load_addr = load_addr;
