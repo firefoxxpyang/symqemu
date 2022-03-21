@@ -2379,13 +2379,6 @@ static void load_elf_image(const char *image_name, int image_fd,
         }
     }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-// FirefoxXP Add Start
-    fprintf(stderr,"[load_elf_image] We get base address here:0x%lu\n",load_addr);
-    fprintf(stderr,"[load_elf_image] We get end address here:0x%lu\n",hiaddr);
-    fprintf(stderr,"[load_elf_image] We get image name here:%s\n",image_name);
-// FirefoxXP Add End
-//////////////////////////////////////////////////////////////////////////////////////////////////////    
 
     info->load_bias = load_bias;
     info->load_addr = load_addr;
@@ -2396,6 +2389,18 @@ static void load_elf_image(const char *image_name, int image_fd,
     info->end_data = 0;
     info->brk = 0;
     info->elf_flags = ehdr->e_flags;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+    fprintf(stderr,"[load_elf_image]--------------------------------image name here:%s]--------------------------------\n",image_name);
+
+    fprintf(stderr,"[load_elf_image] We get base address here:0x%lx\n",load_addr);
+    fprintf(stderr,"[load_elf_image] We get end address here:0x%lx\n",hiaddr);
+    fprintf(stderr,"[load_elf_image] We get entry point here:0x%lx\n",info->entry);
+    
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////    
+
 
     for (i = 0; i < ehdr->e_phnum; i++) {
         struct elf_phdr *eppnt = phdr + i;
@@ -2443,6 +2448,16 @@ static void load_elf_image(const char *image_name, int image_fd,
                 if (vaddr_ef > info->end_code) {
                     info->end_code = vaddr_ef;
                 }
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+// FirefoxXP Add Start
+
+    fprintf(stderr,"[load_elf_image] We get code section start address here:0x%lu\n",info->start_code);
+    fprintf(stderr,"[load_elf_image] We get code section end address here:0x%lu\n",info->end_code);
+    fprintf(stderr,"[load_elf_image] We get image name here:%s\n",image_name);
+
+// FirefoxXP Add End
+//////////////////////////////////////////////////////////////////////////////////////////////////////    
+
             }
             if (elf_prot & PROT_WRITE) {
                 if (vaddr < info->start_data) {
