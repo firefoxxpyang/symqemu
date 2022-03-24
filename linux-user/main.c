@@ -596,7 +596,7 @@ static void handle_arg_sync_directory(const char *arg)
         exit(-1);
     }
 
-    sprintf(pszOutputDir, "%s/FLIP/queue/", g_pszSyncDir);
+    sprintf(pszOutputDir, "%s/FLIP/symoutput/", g_pszSyncDir);
     KdPrint("%s\n",pszOutputDir);
     setenv("SYMCC_OUTPUT_DIR", pszOutputDir, 1);
 }
